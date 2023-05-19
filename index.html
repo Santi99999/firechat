@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>firechat</title>
+  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-database.js"></script>
+</head>
+<body>
+  <h1>firechat</h1>
+
+  <div id="chat">
+    <!-- Aquí se mostrarán los mensajes -->
+  </div>
+
+  <input type="text" id="usernameInput" placeholder="Nombre de usuario">
+  <input type="text" id="messageInput" placeholder="Escribe un mensaje">
+  <button onclick="sendMessage()">Enviar</button>
+
+  <canvas id="canvas" width="400" height="600"></canvas>
+
+  <script>
+    // Configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyC1iUZImM9Khclt0l9LQ1GxN0yVyIeoHY8",
+      authDomain: "projectfirechat.firebaseapp.com",
+      projectId: "projectfirechat"
+    };
+
+    // Inicializar la aplicación de Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    // Obtener una referencia a la base de datos
+    const database = firebase.database();
+
+    // Obtener referencia al elemento de la lista de mensajes
+    const chatElement = document.getElementById('chat');
+
+    // Obtener referencia al canvas
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+
+    // Función para enviar un mensaje
+    function sendMessage() {
+      // Obtener el nombre de usuario y el texto del mensaje
+      const usernameInput = document.getElementById('usernameInput');
+      const messageInput = document.getElementById('messageInput');
+      const username = usernameInput.value.trim();
+      const messageText = messageInput.value.trim();
+
+      if (username !== '' && messageText !== '') {
+        // Crear un objeto con los datos del mensaje
+        const messageData = {
+          username: username,
+          text: messageText,
+          timestamp: Date.now()
+        };
+
+        // Guardar el mensaje en la base de datos de Firebase
+        database.ref('messages').push(messageData);
+
+        // Limpiar los inputs
+        usernameInput.value = '';
+        messageInput.value = '';
+      }
+    }
+
+    // Escuchar los cambios en la base de datos
+    database.ref('messages').on('child_added', snapshot => {
+      // Obtener el mensaje de la instantánea
+      const message = snapshot.val();
+
+      // Crear un elemento de párrafo para mostrar el mensaje
+      const messageElement = document.createElement('p');
+      messageElement.textContent = message.username + ': ' + message.text;
+
+      // Agregar el mensaje al chat
+      chatElement.appendChild(messageElement);
+
+      // Dibujar un círculo en el canvas con un color aleatorio
+      const x = Math.floor(Math.random() * canvas.width);
+      const y = Math.floor(Math.random() * canvas.height);
+      const color = getRandomColor();
+
+      context.beginPath();
+      context.arc(x, y, 5, 0, 2 * Math.PI);
+      context.fillStyle = color;
+      context.fill();
+
+      // Escribir el nombre de usuario cerca del círculo
+      context.fillStyle = '#000';
+      context.fillText(message.username, x - 10, y - 10);
+    });
+
+    // Función para obtener un color aleatorio en formato hexadecimal
+    function getRandomColor() {
+      const letters = '0123456789ABCDEF';
